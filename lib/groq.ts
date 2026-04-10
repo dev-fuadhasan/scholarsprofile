@@ -40,7 +40,14 @@ export async function parseProfileFromPost(text: string) {
 
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content || "{}";
-  const parsed = JSON.parse(content) as Partial<ProfileInput>;
 
-  return parsed;
+  try {
+    return JSON.parse(content) as Partial<ProfileInput>;
+  } catch {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("Groq returned non-JSON content");
+    }
+    return JSON.parse(match[0]) as Partial<ProfileInput>;
+  }
 }

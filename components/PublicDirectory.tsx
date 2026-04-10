@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 type Profile = {
   id: string;
+  createdAt: string;
   name: string;
   visaType: string;
   interviewDate: string;
@@ -69,60 +70,81 @@ export default function PublicDirectory() {
     });
   }, [profiles, query, filters]);
 
+  const ordered = [...filtered].sort((a, b) => {
+    const left = new Date(a.createdAt).getTime();
+    const right = new Date(b.createdAt).getTime();
+    return right - left;
+  });
+
   return (
     <section className="card p-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <input
-          className="input md:col-span-3"
-          placeholder="Search by name, university, program, subject..."
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-        {filterFields.map((field) => (
-          <label key={field.key} className="text-sm text-slate-300">
-            {field.label}
-            <select
-              className="input mt-2"
-              value={filters[field.key]}
-              onChange={(event) => setFilters((prev) => ({ ...prev, [field.key]: event.target.value }))}
-            >
-              <option value="">All</option>
-              {filterOptions[field.key]?.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-      </div>
+      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+        <aside className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Filters</h2>
+            <p className="text-xs text-slate-400">Narrow down by any field.</p>
+          </div>
+          {filterFields.map((field) => (
+            <label key={field.key} className="text-sm text-slate-300">
+              {field.label}
+              <select
+                className="input mt-2"
+                value={filters[field.key]}
+                onChange={(event) => setFilters((prev) => ({ ...prev, [field.key]: event.target.value }))}
+              >
+                <option value="">All</option>
+                {filterOptions[field.key]?.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+          <button
+            className="btn-ghost"
+            onClick={() => setFilters(Object.fromEntries(filterFields.map((field) => [field.key, ""])))}
+          >
+            Clear Filters
+          </button>
+        </aside>
 
-      <div className="mt-8 grid gap-4">
-        {filtered.map((profile) => (
-          <article key={profile.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-xl font-semibold text-white">{profile.name}</h3>
-              <span className="badge">{profile.status || "Status"}</span>
-            </div>
-            <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-              <p>University: {profile.university || "-"}</p>
-              <p>Program: {profile.program || "-"}</p>
-              <p>Subject: {profile.subject || "-"}</p>
-              <p>Intake: {profile.intake || "-"}</p>
-              <p>Funding: {profile.fundingStatus || "-"}</p>
-              <p>Visa Type: {profile.visaType || "-"}</p>
-              <p>Interview Date: {profile.interviewDate || "-"}</p>
-              <p>CGPA: {profile.cgpa || "-"}</p>
-              <p>GRE: {profile.gre || "-"}</p>
-              <p>IELTS/Other: {profile.ieltsOther || "-"}</p>
-              <p>Research: {profile.researchPublication || "-"}</p>
-              <p>Work Experience: {profile.workExperience || "-"}</p>
-            </div>
-          </article>
-        ))}
-        {!filtered.length && (
-          <p className="text-center text-slate-400">No profiles found. Try adjusting filters.</p>
-        )}
+        <div>
+          <input
+            className="input"
+            placeholder="Search by name, university, program, subject..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+
+          <div className="mt-6 grid gap-4">
+            {ordered.map((profile) => (
+              <article key={profile.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-xl font-semibold text-white">{profile.name}</h3>
+                  <span className="badge">{profile.status || "Status"}</span>
+                </div>
+                <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
+                  <p>University: {profile.university || "-"}</p>
+                  <p>Program: {profile.program || "-"}</p>
+                  <p>Subject: {profile.subject || "-"}</p>
+                  <p>Intake: {profile.intake || "-"}</p>
+                  <p>Funding: {profile.fundingStatus || "-"}</p>
+                  <p>Visa Type: {profile.visaType || "-"}</p>
+                  <p>Interview Date: {profile.interviewDate || "-"}</p>
+                  <p>CGPA: {profile.cgpa || "-"}</p>
+                  <p>GRE: {profile.gre || "-"}</p>
+                  <p>IELTS/Other: {profile.ieltsOther || "-"}</p>
+                  <p>Research: {profile.researchPublication || "-"}</p>
+                  <p>Work Experience: {profile.workExperience || "-"}</p>
+                </div>
+              </article>
+            ))}
+            {!ordered.length && (
+              <p className="text-center text-slate-400">No profiles found. Try adjusting filters.</p>
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );

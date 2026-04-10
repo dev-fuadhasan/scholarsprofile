@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { cookies } from "next/headers";
 
-const COOKIE_NAME = "admin_session";
+export const ADMIN_COOKIE_NAME = "admin_session";
 
 function getSecret() {
   return process.env.ADMIN_SECRET || "";
@@ -25,19 +25,18 @@ export function verifySession(token: string | undefined) {
   return crypto.timingSafeEqual(Buffer.from(sig || ""), Buffer.from(expected));
 }
 
-export function setSessionCookie(email: string) {
-  const token = signSession(email);
-  cookies().set(COOKIE_NAME, token, {
+export function sessionCookieOptions() {
+  return {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 12
-  });
+  };
 }
 
 export function requireAdmin() {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const token = cookies().get(ADMIN_COOKIE_NAME)?.value;
   if (!verifySession(token)) {
     return false;
   }

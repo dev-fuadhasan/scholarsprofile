@@ -17,14 +17,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Post text required" }, { status: 400 });
   }
 
-  const parsed = await parseProfileFromPost(postText);
-  const merged: ProfileInput = {
-    ...emptyProfile(),
-    ...parsed,
-    name: manualName || parsed.name || "",
-    facebookProfileUrl,
-    rawPost: postText
-  };
+  try {
+    const parsed = await parseProfileFromPost(postText);
+    const merged: ProfileInput = {
+      ...emptyProfile(),
+      ...parsed,
+      name: manualName || parsed.name || "",
+      facebookProfileUrl,
+      rawPost: postText
+    };
 
-  return NextResponse.json({ profile: merged });
+    return NextResponse.json({ profile: merged });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Parse failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
