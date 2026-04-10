@@ -37,10 +37,13 @@ const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "workExperience", label: "Work Experience" }
 ];
 
+const createDefaultFilters = () =>
+  Object.fromEntries(filterFields.map((field) => [field.key, ""])) as Record<string, string>;
+
 export default function PublicDirectory() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState(() => [] as Profile[]);
   const [query, setQuery] = useState("");
-  const [filters, setFilters] = useState<Record<string, string>>(Object.fromEntries(filterFields.map((field) => [field.key, ""])));
+  const [filters, setFilters] = useState(() => createDefaultFilters() as Record<string, string>);
   const [maxCgpa, setMaxCgpa] = useState("");
   const [maxIelts, setMaxIelts] = useState("");
   const [maxGre, setMaxGre] = useState("");
@@ -88,11 +91,13 @@ export default function PublicDirectory() {
     });
   }, [profiles, query, filters, maxCgpa, maxIelts, maxGre]);
 
-  const ordered = [...filtered].sort((a, b) => {
-    const left = new Date(a.createdAt).getTime();
-    const right = new Date(b.createdAt).getTime();
-    return right - left;
-  });
+  const ordered = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const left = new Date(a.createdAt).getTime();
+      const right = new Date(b.createdAt).getTime();
+      return right - left;
+    });
+  }, [filtered]);
 
   return (
     <section className="card p-6">
@@ -103,7 +108,7 @@ export default function PublicDirectory() {
             <p className="text-xs text-slate-400">Narrow down by any field.</p>
           </div>
           <label className="text-sm text-slate-300">
-            Max CGPA (<=)
+            Max CGPA ({"<="})
             <input
               className="input mt-2"
               inputMode="decimal"
@@ -113,7 +118,7 @@ export default function PublicDirectory() {
             />
           </label>
           <label className="text-sm text-slate-300">
-            Max IELTS (<=)
+            Max IELTS ({"<="})
             <input
               className="input mt-2"
               inputMode="decimal"
@@ -123,7 +128,7 @@ export default function PublicDirectory() {
             />
           </label>
           <label className="text-sm text-slate-300">
-            Max GRE (<=)
+            Max GRE ({"<="})
             <input
               className="input mt-2"
               inputMode="decimal"
@@ -152,7 +157,7 @@ export default function PublicDirectory() {
           <button
             className="btn-ghost"
             onClick={() => {
-              setFilters(Object.fromEntries(filterFields.map((field) => [field.key, ""])));
+              setFilters(createDefaultFilters());
               setMaxCgpa("");
               setMaxIelts("");
               setMaxGre("");
