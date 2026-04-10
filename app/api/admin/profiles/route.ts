@@ -12,7 +12,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" }
   });
 
-  return NextResponse.json({ profiles });
+  return NextResponse.json({ profiles }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   const created = await prisma.profile.create({ data });
-  return NextResponse.json({ profile: created });
+  return NextResponse.json({ profile: created }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PUT(request: Request) {
@@ -47,7 +47,7 @@ export async function PUT(request: Request) {
     data: { ...body }
   });
 
-  return NextResponse.json({ profile: updated });
+  return NextResponse.json({ profile: updated }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function DELETE(request: Request) {
@@ -62,5 +62,5 @@ export async function DELETE(request: Request) {
   }
 
   await prisma.profile.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
 }

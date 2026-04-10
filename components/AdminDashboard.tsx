@@ -37,6 +37,7 @@ export default function AdminDashboard() {
   const [preview, setPreview] = useState<Profile | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Profile>(emptyProfile());
+  const [notice, setNotice] = useState("");
 
   const selectedProfile = useMemo(
     () => profiles.find((profile) => profile.id === selectedId) || null,
@@ -69,6 +70,7 @@ export default function AdminDashboard() {
   const handleLogin = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
+    setNotice("");
     const res = await fetch("/api/admin/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,6 +88,7 @@ export default function AdminDashboard() {
 
   const handleParse = async () => {
     setError("");
+    setNotice("");
     const res = await fetch("/api/admin/parse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -99,11 +102,13 @@ export default function AdminDashboard() {
     }
 
     setPreview(data.profile);
+    setNotice("Parsed successfully. Review before saving.");
   };
 
   const handleSavePreview = async () => {
     if (!preview) return;
     setError("");
+    setNotice("");
     const res = await fetch("/api/admin/profiles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -121,11 +126,13 @@ export default function AdminDashboard() {
     setManualName("");
     setFacebookProfileUrl("");
     await fetchProfiles();
+    setNotice("Profile saved.");
   };
 
   const handleUpdate = async () => {
     if (!selectedProfile?.id) return;
     setError("");
+    setNotice("");
     const res = await fetch("/api/admin/profiles", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -139,6 +146,7 @@ export default function AdminDashboard() {
     }
 
     setProfiles((prev) => prev.map((profile) => (profile.id === data.profile.id ? data.profile : profile)));
+    setNotice("Changes saved.");
   };
 
   const handleDelete = async (id: string) => {
@@ -156,6 +164,7 @@ export default function AdminDashboard() {
 
     setProfiles((prev) => prev.filter((profile) => profile.id !== id));
     if (selectedId === id) setSelectedId(null);
+    setNotice("Profile deleted.");
   };
 
   if (!isAuthed) {
@@ -168,6 +177,7 @@ export default function AdminDashboard() {
             <input className="input" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
             <input className="input" type="password" placeholder="Password" value={password} onChange={(event) => setPassword(event.target.value)} />
             {error && <p className="text-sm text-red-400">{error}</p>}
+            {notice && <p className="text-sm text-emerald-400">{notice}</p>}
             <button className="btn-primary" type="submit">Login</button>
           </form>
         </section>
@@ -192,6 +202,7 @@ export default function AdminDashboard() {
             <textarea className="input min-h-[140px]" placeholder="Paste Facebook post here" value={postText} onChange={(event) => setPostText(event.target.value)} />
             <button className="btn-primary" onClick={handleParse}>Parse with Groq</button>
             {error && <p className="text-sm text-red-400">{error}</p>}
+            {notice && <p className="text-sm text-emerald-400">{notice}</p>}
           </div>
         </div>
 

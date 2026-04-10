@@ -11,5 +11,12 @@ export async function GET() {
     return rest;
   });
 
-  return NextResponse.json({ profiles: publicProfiles });
+  return NextResponse.json(
+    { profiles: publicProfiles },
+    {
+      headers: {
+        "Cache-Control": "no-store, max-age=0"
+      }
+    }
+  );
 }
