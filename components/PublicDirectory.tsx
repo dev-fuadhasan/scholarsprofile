@@ -43,7 +43,7 @@ export default function PublicDirectory() {
   const [filters, setFilters] = useState<Record<string, string>>(Object.fromEntries(filterFields.map((field) => [field.key, ""])));
 
   useEffect(() => {
-    fetch("/api/public/profiles")
+    fetch("/api/public/profiles", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => setProfiles(data.profiles || []))
       .catch(() => setProfiles([]));
