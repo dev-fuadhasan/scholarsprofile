@@ -7,6 +7,10 @@ Return a single JSON object with keys:
 name, visaType, interviewDate, status, university, program, subject, fundingStatus,
 intake, universityName, cgpa, gre, ieltsOther, researchPublication, workExperience.
 
+Field meaning:
+- university = Intended University
+- universityName = Studied University
+
 Normalization rules:
 - program must be only "MSc" or "PhD" (empty string if unknown).
 - subject must be the degree subject only (e.g., "Electrical and Computer Engineering").
@@ -48,6 +52,16 @@ function extractSubjectFromProgram(value: string) {
   return match ? match[1].trim() : "";
 }
 
+function extractStudiedUniversity(text: string) {
+  const labeled = extractLabeledValue(text, "studied university");
+  if (labeled) return labeled;
+
+  const degreeMatch = text.match(
+    /(?:B\.?Sc\.?|Bachelors?|Bachelor|B\.?E\.?|B\.?Eng|B\.?Tech|M\.?Sc\.?|Masters?|M\.?Eng|M\.?Tech)[^\n]*\n([^\n]+)/i
+  );
+  return degreeMatch ? degreeMatch[1].trim() : "";
+}
+
 function normalizeFunding(value: string, rawText: string) {
   const normalized = value.toLowerCase();
   if (normalized.includes("full")) return "Full";
@@ -81,11 +95,17 @@ function normalizeParsed(parsed: Partial<ProfileInput>, rawText: string) {
   const gre = parsed.gre || extractLabeledValue(rawText, "gre");
   const ielts = parsed.ieltsOther || extractLabeledValue(rawText, "ielts");
   const toefl = extractLabeledValue(rawText, "toefl");
+  const intendedUniversity =
+    parsed.university || extractLabeledValue(rawText, "intended university");
+  const studiedUniversity =
+    parsed.universityName || extractStudiedUniversity(rawText);
 
   return {
     ...parsed,
     program,
     subject,
+    university: intendedUniversity,
+    universityName: studiedUniversity,
     fundingStatus: normalizeFunding(parsed.fundingStatus || "", rawText),
     cgpa: extractNumber(cgpa),
     gre: extractNumber(gre),

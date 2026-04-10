@@ -54,12 +54,12 @@ function deriveSubject(program: string) {
 
 const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "visaType", label: "Visa Type" },
-  { key: "university", label: "University" },
+  { key: "university", label: "Intended University" },
   { key: "program", label: "Program" },
   { key: "subject", label: "Subject" },
   { key: "fundingStatus", label: "Funding" },
   { key: "intake", label: "Intake" },
-  { key: "universityName", label: "University Name" },
+  { key: "universityName", label: "Studied University" },
   { key: "researchPublication", label: "Research" },
   { key: "workExperience", label: "Work Experience" }
 ];
@@ -238,13 +238,14 @@ export default function PublicDirectory() {
                   <span className="badge">{profile.status || "Status"}</span>
                 </div>
                 <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-                  <p>University: {profile.university || "-"}</p>
+                  <p>Intended University: {profile.university || "-"}</p>
                   <p>Program: {normalizeProgram(profile.program) || profile.program || "-"}</p>
                   <p>Subject: {profile.subject || deriveSubject(profile.program) || "-"}</p>
                   <p>Intake: {profile.intake || "-"}</p>
                   <p>Funding: {profile.fundingStatus || "-"}</p>
                   <p>Visa Type: {profile.visaType || "-"}</p>
                   <p>Interview Date: {profile.interviewDate || "-"}</p>
+                  <p>Studied University: {profile.universityName || "-"}</p>
                   <p>CGPA: {profile.cgpa || "-"}</p>
                   <p>GRE: {profile.gre || "-"}</p>
                   <p>IELTS/Other: {profile.ieltsOther || "-"}</p>
