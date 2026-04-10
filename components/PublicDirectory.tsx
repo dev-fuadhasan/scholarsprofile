@@ -22,8 +22,37 @@ type Profile = {
   workExperience: string;
 };
 
+function normalizeProgram(value: string) {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("phd")) return "PhD";
+  if (
+    normalized.includes("msc") ||
+    normalized.includes("m.sc") ||
+    normalized.includes("ms") ||
+    normalized.includes("master")
+  ) {
+    return "MSc";
+  }
+  return value.trim();
+}
+
+function normalizeFunding(value: string) {
+  return value.toLowerCase().includes("full") ? "Full" : "";
+}
+
+function extractNumber(value: string) {
+  const match = value.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+  const parsed = Number.parseFloat(match[1]);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function deriveSubject(program: string) {
+  const match = program.match(/\b(?:phd|msc|m\.sc|ms|master\'?s?)\b\s+in\s+([^,.;\n]+)/i);
+  return match ? match[1].trim() : "";
+}
+
 const filterFields: { key: keyof Profile; label: string }[] = [
-  { key: "status", label: "Status" },
   { key: "visaType", label: "Visa Type" },
   { key: "university", label: "University" },
   { key: "program", label: "Program" },
@@ -31,8 +60,6 @@ const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "fundingStatus", label: "Funding" },
   { key: "intake", label: "Intake" },
   { key: "universityName", label: "University Name" },
-  { key: "gre", label: "GRE" },
-  { key: "ieltsOther", label: "IELTS/Other" },
   { key: "researchPublication", label: "Research" },
   { key: "workExperience", label: "Work Experience" }
 ];
@@ -45,8 +72,8 @@ export default function PublicDirectory() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState(() => createDefaultFilters() as Record<string, string>);
   const [maxCgpa, setMaxCgpa] = useState("");
-  const [maxIelts, setMaxIelts] = useState("");
-  const [maxGre, setMaxGre] = useState("");
+  const [ieltsScore, setIeltsScore] = useState("");
+  const [greScore, setGreScore] = useState("");
 
   useEffect(() => {
     fetch("/api/public/profiles", { cache: "no-store" })
@@ -58,6 +85,28 @@ export default function PublicDirectory() {
   const filterOptions = useMemo(() => {
     const map: Record<string, string[]> = {};
     filterFields.forEach((field) => {
+      if (field.key === "program") {
+        map[field.key] = Array.from(
+          new Set(
+            profiles
+              .map((profile) => normalizeProgram(profile.program))
+              .filter((value) => value === "MSc" || value === "PhD")
+          )
+        ).sort();
+        return;
+      }
+
+      if (field.key === "fundingStatus") {
+        map[field.key] = Array.from(
+          new Set(
+            profiles
+              .map((profile) => normalizeFunding(profile.fundingStatus))
+              .filter((value) => value === "Full")
+          )
+        );
+        return;
+      }
+
       map[field.key] = Array.from(new Set(profiles.map((profile) => profile[field.key]).filter(Boolean))).sort();
     });
     return map;
@@ -66,8 +115,8 @@ export default function PublicDirectory() {
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     const cgpaLimit = maxCgpa ? Number.parseFloat(maxCgpa) : null;
-    const ieltsLimit = maxIelts ? Number.parseFloat(maxIelts) : null;
-    const greLimit = maxGre ? Number.parseFloat(maxGre) : null;
+    const ieltsExact = ieltsScore ? Number.parseFloat(ieltsScore) : null;
+    const greExact = greScore ? Number.parseFloat(greScore) : null;
     return profiles.filter((profile) => {
       const matchesQuery = Object.values(profile).some((value) => value?.toString().toLowerCase().includes(q));
       if (!matchesQuery) return false;
@@ -75,21 +124,27 @@ export default function PublicDirectory() {
         const value = Number.parseFloat(profile.cgpa || "");
         if (Number.isNaN(value) || value > cgpaLimit) return false;
       }
-      if (ieltsLimit !== null) {
-        const value = Number.parseFloat(profile.ieltsOther || "");
-        if (Number.isNaN(value) || value > ieltsLimit) return false;
+      if (ieltsExact !== null) {
+        const value = extractNumber(profile.ieltsOther);
+        if (value === null || Math.abs(value - ieltsExact) > 0.01) return false;
       }
-      if (greLimit !== null) {
-        const value = Number.parseFloat(profile.gre || "");
-        if (Number.isNaN(value) || value > greLimit) return false;
+      if (greExact !== null) {
+        const value = extractNumber(profile.gre);
+        if (value === null || Math.abs(value - greExact) > 0.01) return false;
       }
       return filterFields.every((field) => {
         const selected = filters[field.key];
         if (!selected) return true;
+        if (field.key === "program") {
+          return normalizeProgram(profile.program) === selected;
+        }
+        if (field.key === "fundingStatus") {
+          return normalizeFunding(profile.fundingStatus) === selected;
+        }
         return profile[field.key] === selected;
       });
     });
-  }, [profiles, query, filters, maxCgpa, maxIelts, maxGre]);
+  }, [profiles, query, filters, maxCgpa, ieltsScore, greScore]);
 
   const ordered = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -118,23 +173,23 @@ export default function PublicDirectory() {
             />
           </label>
           <label className="text-sm text-slate-300">
-            Max IELTS ({"<="})
+            IELTS Score
             <input
               className="input mt-2"
               inputMode="decimal"
               placeholder="e.g. 7.5"
-              value={maxIelts}
-              onChange={(event) => setMaxIelts(event.target.value)}
+              value={ieltsScore}
+              onChange={(event) => setIeltsScore(event.target.value)}
             />
           </label>
           <label className="text-sm text-slate-300">
-            Max GRE ({"<="})
+            GRE Score
             <input
               className="input mt-2"
               inputMode="decimal"
               placeholder="e.g. 320"
-              value={maxGre}
-              onChange={(event) => setMaxGre(event.target.value)}
+              value={greScore}
+              onChange={(event) => setGreScore(event.target.value)}
             />
           </label>
           {filterFields.map((field) => (
@@ -159,8 +214,8 @@ export default function PublicDirectory() {
             onClick={() => {
               setFilters(createDefaultFilters());
               setMaxCgpa("");
-              setMaxIelts("");
-              setMaxGre("");
+              setIeltsScore("");
+              setGreScore("");
             }}
           >
             Clear Filters
@@ -184,8 +239,8 @@ export default function PublicDirectory() {
                 </div>
                 <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
                   <p>University: {profile.university || "-"}</p>
-                  <p>Program: {profile.program || "-"}</p>
-                  <p>Subject: {profile.subject || "-"}</p>
+                  <p>Program: {normalizeProgram(profile.program) || profile.program || "-"}</p>
+                  <p>Subject: {profile.subject || deriveSubject(profile.program) || "-"}</p>
                   <p>Intake: {profile.intake || "-"}</p>
                   <p>Funding: {profile.fundingStatus || "-"}</p>
                   <p>Visa Type: {profile.visaType || "-"}</p>
