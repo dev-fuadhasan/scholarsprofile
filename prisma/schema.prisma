@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model Profile {
+  id                   String   @id @default(cuid())
+  name                 String
+  visaType             String   @default("")
+  interviewDate        String   @default("")
+  status               String   @default("")
+  university           String   @default("")
+  program              String   @default("")
+  subject              String   @default("")
+  fundingStatus        String   @default("")
+  intake               String   @default("")
+  universityName       String   @default("")
+  cgpa                 String   @default("")
+  gre                  String   @default("")
+  ieltsOther           String   @default("")
+  researchPublication  String   @default("")
+  workExperience       String   @default("")
+  facebookProfileUrl   String   @default("")
+  rawPost              String   @default("")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
