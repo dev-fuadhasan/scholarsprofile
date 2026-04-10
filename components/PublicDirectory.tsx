@@ -41,6 +41,9 @@ export default function PublicDirectory() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>(Object.fromEntries(filterFields.map((field) => [field.key, ""])));
+  const [maxCgpa, setMaxCgpa] = useState("");
+  const [maxIelts, setMaxIelts] = useState("");
+  const [maxGre, setMaxGre] = useState("");
 
   useEffect(() => {
     fetch("/api/public/profiles", { cache: "no-store" })
@@ -59,16 +62,31 @@ export default function PublicDirectory() {
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
+    const cgpaLimit = maxCgpa ? Number.parseFloat(maxCgpa) : null;
+    const ieltsLimit = maxIelts ? Number.parseFloat(maxIelts) : null;
+    const greLimit = maxGre ? Number.parseFloat(maxGre) : null;
     return profiles.filter((profile) => {
       const matchesQuery = Object.values(profile).some((value) => value?.toString().toLowerCase().includes(q));
       if (!matchesQuery) return false;
+      if (cgpaLimit !== null) {
+        const value = Number.parseFloat(profile.cgpa || "");
+        if (Number.isNaN(value) || value > cgpaLimit) return false;
+      }
+      if (ieltsLimit !== null) {
+        const value = Number.parseFloat(profile.ieltsOther || "");
+        if (Number.isNaN(value) || value > ieltsLimit) return false;
+      }
+      if (greLimit !== null) {
+        const value = Number.parseFloat(profile.gre || "");
+        if (Number.isNaN(value) || value > greLimit) return false;
+      }
       return filterFields.every((field) => {
         const selected = filters[field.key];
         if (!selected) return true;
         return profile[field.key] === selected;
       });
     });
-  }, [profiles, query, filters]);
+  }, [profiles, query, filters, maxCgpa, maxIelts, maxGre]);
 
   const ordered = [...filtered].sort((a, b) => {
     const left = new Date(a.createdAt).getTime();
@@ -84,6 +102,36 @@ export default function PublicDirectory() {
             <h2 className="text-lg font-semibold">Filters</h2>
             <p className="text-xs text-slate-400">Narrow down by any field.</p>
           </div>
+          <label className="text-sm text-slate-300">
+            Max CGPA (<=)
+            <input
+              className="input mt-2"
+              inputMode="decimal"
+              placeholder="e.g. 3.5"
+              value={maxCgpa}
+              onChange={(event) => setMaxCgpa(event.target.value)}
+            />
+          </label>
+          <label className="text-sm text-slate-300">
+            Max IELTS (<=)
+            <input
+              className="input mt-2"
+              inputMode="decimal"
+              placeholder="e.g. 7.5"
+              value={maxIelts}
+              onChange={(event) => setMaxIelts(event.target.value)}
+            />
+          </label>
+          <label className="text-sm text-slate-300">
+            Max GRE (<=)
+            <input
+              className="input mt-2"
+              inputMode="decimal"
+              placeholder="e.g. 320"
+              value={maxGre}
+              onChange={(event) => setMaxGre(event.target.value)}
+            />
+          </label>
           {filterFields.map((field) => (
             <label key={field.key} className="text-sm text-slate-300">
               {field.label}
@@ -103,7 +151,12 @@ export default function PublicDirectory() {
           ))}
           <button
             className="btn-ghost"
-            onClick={() => setFilters(Object.fromEntries(filterFields.map((field) => [field.key, ""])))}
+            onClick={() => {
+              setFilters(Object.fromEntries(filterFields.map((field) => [field.key, ""])));
+              setMaxCgpa("");
+              setMaxIelts("");
+              setMaxGre("");
+            }}
           >
             Clear Filters
           </button>
