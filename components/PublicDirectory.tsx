@@ -31,6 +31,7 @@ type AiReport = {
   gaps: string[];
   recommendations: string[];
   readinessScore: number;
+  recommendedUniversities: { name: string; reason: string }[];
 };
 
 function normalizeProgram(value: string | null | undefined) {
