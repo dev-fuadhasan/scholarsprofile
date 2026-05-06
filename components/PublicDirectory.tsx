@@ -253,91 +253,106 @@ export default function PublicDirectory() {
           <span>Showing <strong className="text-white">{ordered.length}</strong> profiles</span>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3">
+        <div className="flex flex-col gap-6">
           {ordered.map((profile) => (
             <article 
               key={profile.id} 
-              className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 p-6 transition-all hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-800/40 hover:shadow-xl hover:shadow-cyan-900/10"
+              className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 p-6 md:p-8 transition-all hover:border-slate-700 hover:bg-slate-800/40 hover:shadow-xl hover:shadow-cyan-900/10"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h3 className="truncate text-xl font-bold tracking-tight text-white">{profile.name}</h3>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-cyan-400">
-                    <GraduationCap className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="text-2xl font-bold tracking-tight text-white">{profile.name}</h3>
+                    <span className="badge shrink-0 border-cyan-800 bg-cyan-950/50 text-cyan-300">
+                      {profile.status || "Status"}
+                    </span>
+                    {profile.fundingStatus && (
+                      <span className="badge shrink-0 border-emerald-800 bg-emerald-950/50 text-emerald-300">
+                        <Banknote className="mr-1.5 h-3.5 w-3.5" /> {profile.fundingStatus}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-sm font-medium text-cyan-400">
+                    <GraduationCap className="h-5 w-5 shrink-0" />
+                    <span>
                       {normalizeProgram(profile.program) || profile.program || "Program"} 
                       {profile.subject || deriveSubject(profile.program) ? ` in ${profile.subject || deriveSubject(profile.program)}` : ""}
                     </span>
                   </div>
                 </div>
-                <span className="badge shrink-0 border-cyan-800 bg-cyan-950/50 text-cyan-300">
-                  {profile.status || "Status"}
-                </span>
+                
+                {/* Scores */}
+                <div className="flex flex-wrap gap-2 md:justify-end shrink-0">
+                  {profile.cgpa && (
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3.5 py-1.5 text-sm font-medium text-slate-200 border border-slate-800">
+                      <span className="text-slate-500 uppercase text-[11px] font-bold tracking-wider">CGPA</span> {profile.cgpa}
+                    </span>
+                  )}
+                  {profile.gre && (
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3.5 py-1.5 text-sm font-medium text-slate-200 border border-slate-800">
+                      <span className="text-slate-500 uppercase text-[11px] font-bold tracking-wider">GRE</span> {profile.gre}
+                    </span>
+                  )}
+                  {profile.ieltsOther && (
+                    <span className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3.5 py-1.5 text-sm font-medium text-slate-200 border border-slate-800">
+                      <span className="text-slate-500 uppercase text-[11px] font-bold tracking-wider">IELTS</span> {profile.ieltsOther}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <div className="my-5 h-px w-full bg-gradient-to-r from-slate-800 to-transparent" />
+              <div className="my-6 h-px w-full bg-gradient-to-r from-slate-800 via-slate-800/50 to-transparent" />
 
-              <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-4 text-sm">
-                <div className="flex flex-col gap-1 text-slate-300">
+              {/* Core Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                <div className="flex flex-col gap-1.5 text-slate-300">
                   <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <University className="h-3.5 w-3.5" /> Intended
+                    <University className="h-3.5 w-3.5" /> Intended University
                   </span>
-                  <span className="font-medium line-clamp-1" title={profile.university}>{profile.university || "-"}</span>
-                </div>
-                <div className="flex flex-col gap-1 text-slate-300">
-                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <Banknote className="h-3.5 w-3.5" /> Funding
-                  </span>
-                  <span className="font-medium text-emerald-400">{profile.fundingStatus || "-"}</span>
+                  <span className="font-medium text-slate-200">{profile.university || "-"}</span>
                 </div>
                 
-                <div className="flex flex-col gap-1 text-slate-300">
+                <div className="flex flex-col gap-1.5 text-slate-300">
                   <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                    <BookOpen className="h-3.5 w-3.5" /> Studied
+                    <BookOpen className="h-3.5 w-3.5" /> Studied University
                   </span>
-                  <span className="font-medium line-clamp-1" title={profile.universityName}>{profile.universityName || "-"}</span>
+                  <span className="font-medium text-slate-200">{profile.universityName || "-"}</span>
                 </div>
-                <div className="flex flex-col gap-1 text-slate-300">
+
+                <div className="flex flex-col gap-1.5 text-slate-300">
                   <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     <Calendar className="h-3.5 w-3.5" /> Intake / Visa
                   </span>
-                  <span className="font-medium">{profile.intake || "-"} / {profile.visaType || "-"}</span>
+                  <span className="font-medium text-slate-200">
+                    {profile.intake || "Unknown Intake"} <span className="text-slate-600 px-1">•</span> {profile.visaType || "Unknown Visa"}
+                    {profile.interviewDate && ` (${profile.interviewDate})`}
+                  </span>
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-slate-800/60">
-                {profile.cgpa && (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
-                    <span className="text-slate-500">CGPA</span> {profile.cgpa}
-                  </span>
-                )}
-                {profile.gre && (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
-                    <span className="text-slate-500">GRE</span> {profile.gre}
-                  </span>
-                )}
-                {profile.ieltsOther && (
-                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
-                    <span className="text-slate-500">IELTS</span> {profile.ieltsOther}
-                  </span>
-                )}
-              </div>
-              
+              {/* Extended Text (Research & Experience) */}
               {(profile.researchPublication || profile.workExperience) && (
-                <div className="mt-3 grid gap-1.5 text-xs text-slate-400">
-                  {profile.researchPublication && (
-                    <div className="flex items-start gap-2">
-                       <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                       <span className="line-clamp-2 leading-relaxed" title={profile.researchPublication}>{profile.researchPublication}</span>
-                    </div>
-                  )}
-                  {profile.workExperience && (
-                    <div className="flex items-start gap-2">
-                       <Briefcase className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
-                       <span className="line-clamp-2 leading-relaxed" title={profile.workExperience}>{profile.workExperience}</span>
-                    </div>
-                  )}
-                </div>
+                <>
+                  <div className="my-6 h-px w-full bg-slate-800/40" />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
+                    {profile.researchPublication && (
+                      <div className="flex flex-col gap-2 rounded-xl bg-slate-950/40 p-4 shrink-0 border border-slate-800/50">
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <FileText className="h-3.5 w-3.5" /> Research & Publications
+                        </span>
+                        <span className="text-slate-300 leading-relaxed whitespace-pre-wrap">{profile.researchPublication}</span>
+                      </div>
+                    )}
+                    {profile.workExperience && (
+                      <div className="flex flex-col gap-2 rounded-xl bg-slate-950/40 p-4 shrink-0 border border-slate-800/50">
+                        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                          <Briefcase className="h-3.5 w-3.5" /> Work Experience
+                        </span>
+                        <span className="text-slate-300 leading-relaxed whitespace-pre-wrap">{profile.workExperience}</span>
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
             </article>
           ))}
