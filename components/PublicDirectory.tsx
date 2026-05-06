@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { GraduationCap, Search, Filter, AlertCircle, University, Calendar, BookOpen, Banknote, FileText, Briefcase, Award } from "lucide-react";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { GraduationCap, Search, Filter, AlertCircle, University, Calendar, BookOpen, Banknote, FileText, Briefcase, Download } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -55,6 +57,11 @@ function deriveSubject(program: string | null | undefined) {
   if (!program) return "";
   const match = program.match(/\b(?:phd|msc|m\.sc|ms|master\'?s?)\b\s+in\s+([^,.;\n]+)/i);
   return match ? match[1].trim() : "";
+}
+
+function formatReportValue(value: string | null | undefined) {
+  if (!value) return "-";
+  return value.trim() || "-";
 }
 
 const filterFields: { key: keyof Profile; label: string }[] = [
@@ -159,6 +166,97 @@ export default function PublicDirectory() {
     });
   }, [filtered]);
 
+  const filterSummary = useMemo(() => {
+    const summary: string[] = [];
+    if (query.trim()) summary.push(`Search: ${query.trim()}`);
+    if (maxCgpa.trim()) summary.push(`Max CGPA: ${maxCgpa.trim()}`);
+    if (ieltsScore.trim()) summary.push(`IELTS: ${ieltsScore.trim()}`);
+    if (greScore.trim()) summary.push(`GRE: ${greScore.trim()}`);
+    Object.entries(filters).forEach(([key, value]) => {
+      if (!value) return;
+      const label = filterFields.find((field) => field.key === key)?.label ?? key;
+      summary.push(`${label}: ${value}`);
+    });
+    return summary.length ? summary.join(" | ") : "None";
+  }, [filters, greScore, ieltsScore, maxCgpa, query]);
+
+  const handleGenerateReport = () => {
+    if (!ordered.length) return;
+
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    doc.setFontSize(18);
+    doc.text("Scholars Directory Report", 40, 40);
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 60);
+    doc.text(`Filters: ${filterSummary}`, 40, 75, { maxWidth: pageWidth - 80 });
+
+    autoTable(doc, {
+      startY: 95,
+      head: [[
+        "Name",
+        "Program",
+        "Subject",
+        "Intended University",
+        "Studied University",
+        "Funding",
+        "Intake",
+        "Visa",
+        "Interview Date",
+        "CGPA",
+        "GRE",
+        "IELTS/Other",
+        "Research",
+        "Work Experience"
+      ]],
+      body: ordered.map((profile) => [
+        formatReportValue(profile.name),
+        formatReportValue(normalizeProgram(profile.program) || profile.program),
+        formatReportValue(profile.subject || deriveSubject(profile.program)),
+        formatReportValue(profile.university),
+        formatReportValue(profile.universityName),
+        formatReportValue(profile.fundingStatus),
+        formatReportValue(profile.intake),
+        formatReportValue(profile.visaType),
+        formatReportValue(profile.interviewDate),
+        formatReportValue(profile.cgpa),
+        formatReportValue(profile.gre),
+        formatReportValue(profile.ieltsOther),
+        formatReportValue(profile.researchPublication),
+        formatReportValue(profile.workExperience)
+      ]),
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 4,
+        overflow: "linebreak"
+      },
+      headStyles: {
+        fillColor: [8, 65, 79],
+        textColor: [245, 248, 255],
+        fontStyle: "bold"
+      },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 80 },
+        3: { cellWidth: 120 },
+        4: { cellWidth: 120 },
+        5: { cellWidth: 60 },
+        6: { cellWidth: 60 },
+        7: { cellWidth: 55 },
+        8: { cellWidth: 65 },
+        9: { cellWidth: 40 },
+        10: { cellWidth: 40 },
+        11: { cellWidth: 55 },
+        12: { cellWidth: 140 },
+        13: { cellWidth: 140 }
+      }
+    });
+
+    doc.save(`scholars-report-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="grid gap-8 lg:grid-cols-[280px_1fr] items-start">
       {/* Sidebar Filters */}
@@ -249,8 +347,17 @@ export default function PublicDirectory() {
           />
         </div>
 
-        <div className="flex items-center justify-between text-sm text-slate-400 px-1">
+        <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-slate-400 px-1">
           <span>Showing <strong className="text-white">{ordered.length}</strong> profiles</span>
+          <button
+            type="button"
+            className="badge border-cyan-800 bg-cyan-950/50 text-cyan-300 hover:border-cyan-500 hover:text-cyan-200 transition disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={handleGenerateReport}
+            disabled={!ordered.length}
+          >
+            <Download className="mr-2 h-3.5 w-3.5" />
+            Generate Report
+          </button>
         </div>
 
         <div className="flex flex-col gap-6">
