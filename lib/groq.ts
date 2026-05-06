@@ -157,3 +157,100 @@ export async function parseProfileFromPost(text: string) {
     return normalizeParsed(parsed, text);
   }
 }
+
+export type ReportProfileInput = {
+  id: string;
+  name: string;
+  program: string;
+  subject: string;
+  university: string;
+  universityName: string;
+  fundingStatus: string;
+  intake: string;
+  visaType: string;
+  interviewDate: string;
+  cgpa: string;
+  gre: string;
+  ieltsOther: string;
+  researchPublication: string;
+  workExperience: string;
+};
+
+export type ReportProfileOutput = {
+  id: string;
+  summary: string;
+  strengths: string[];
+  gaps: string[];
+  recommendations: string[];
+  readinessScore: number;
+};
+
+const reportSystemPrompt = `You are an admissions advisor creating an application-ready report.
+Return only JSON with this shape:
+{
+  "profiles": [
+    {
+      "id": "",
+      "summary": "",
+      "strengths": [""],
+      "gaps": [""],
+      "recommendations": [""],
+      "readinessScore": 0
+    }
+  ]
+}
+
+Rules:
+- summary: 2-3 concise sentences.
+- strengths, gaps, recommendations: 2-4 bullet-like short phrases each.
+- readinessScore: 0-100 integer.
+- Be factual; if data is missing, say so in gaps/recommendations.
+- No markdown or extra text.`;
+
+export async function generateReportProfiles(profiles: ReportProfileInput[]) {
+  const apiKey = process.env.GROQ_API_KEY || "";
+  if (!apiKey) {
+    throw new Error("Missing GROQ_API_KEY");
+  }
+
+  const model = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+
+  const response = await fetch(GROQ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: reportSystemPrompt },
+        {
+          role: "user",
+          content: JSON.stringify({ profiles })
+        }
+      ]
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(`Groq error: ${detail}`);
+  }
+
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content || "{}";
+
+  try {
+    const parsed = JSON.parse(content) as { profiles: ReportProfileOutput[] };
+    return parsed.profiles || [];
+  } catch {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) {
+      throw new Error("Groq returned non-JSON content");
+    }
+    const parsed = JSON.parse(match[0]) as { profiles: ReportProfileOutput[] };
+    return parsed.profiles || [];
+  }
+}

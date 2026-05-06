@@ -25,6 +25,14 @@ type Profile = {
   workExperience: string;
 };
 
+type AiReport = {
+  summary: string;
+  strengths: string[];
+  gaps: string[];
+  recommendations: string[];
+  readinessScore: number;
+};
+
 function normalizeProgram(value: string | null | undefined) {
   if (!value) return "";
   const normalized = value.toLowerCase();
@@ -64,6 +72,11 @@ function formatReportValue(value: string | null | undefined) {
   return value.trim() || "-";
 }
 
+function formatList(value: string[] | undefined) {
+  if (!value || !value.length) return "-";
+  return value.map((item) => `- ${item}`).join("\n");
+}
+
 const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "visaType", label: "Visa Type" },
   { key: "university", label: "Intended University" },
@@ -86,6 +99,7 @@ export default function PublicDirectory() {
   const [maxCgpa, setMaxCgpa] = useState("");
   const [ieltsScore, setIeltsScore] = useState("");
   const [greScore, setGreScore] = useState("");
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/public/profiles", { cache: "no-store" })
@@ -180,8 +194,52 @@ export default function PublicDirectory() {
     return summary.length ? summary.join(" | ") : "None";
   }, [filters, greScore, ieltsScore, maxCgpa, query]);
 
-  const handleGenerateReport = () => {
+  const handleGenerateReport = async () => {
     if (!ordered.length) return;
+
+    setReportLoading(true);
+    let aiReportMap = new Map<string, AiReport>();
+
+    try {
+      const response = await fetch("/api/public/report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profiles: ordered.map((profile) => ({
+            id: profile.id,
+            name: profile.name,
+            program: profile.program,
+            subject: profile.subject,
+            university: profile.university,
+            universityName: profile.universityName,
+            fundingStatus: profile.fundingStatus,
+            intake: profile.intake,
+            visaType: profile.visaType,
+            interviewDate: profile.interviewDate,
+            cgpa: profile.cgpa,
+            gre: profile.gre,
+            ieltsOther: profile.ieltsOther,
+            researchPublication: profile.researchPublication,
+            workExperience: profile.workExperience
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        const message = errorBody?.error || "Failed to generate AI report.";
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      const reportProfiles = (data?.profiles || []) as (AiReport & { id: string })[];
+      aiReportMap = new Map(reportProfiles.map((item) => [item.id, item]));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to generate AI report.";
+      alert(message);
+    } finally {
+      setReportLoading(false);
+    }
 
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -205,6 +263,8 @@ export default function PublicDirectory() {
       doc.text(`${index + 1}. ${formatReportValue(profile.name)}`, 40, cursorY);
       cursorY += 10;
 
+      const aiReport = aiReportMap.get(profile.id);
+
       autoTable(doc, {
         startY: cursorY + 6,
         head: [["Field", "Value"]],
@@ -221,7 +281,15 @@ export default function PublicDirectory() {
           ["GRE", formatReportValue(profile.gre)],
           ["IELTS/Other", formatReportValue(profile.ieltsOther)],
           ["Research", formatReportValue(profile.researchPublication)],
-          ["Work Experience", formatReportValue(profile.workExperience)]
+          ["Work Experience", formatReportValue(profile.workExperience)],
+          ["AI Summary", formatReportValue(aiReport?.summary)],
+          ["Strengths", formatList(aiReport?.strengths)],
+          ["Gaps", formatList(aiReport?.gaps)],
+          ["Recommendations", formatList(aiReport?.recommendations)],
+          [
+            "Readiness Score",
+            Number.isFinite(aiReport?.readinessScore) ? `${aiReport?.readinessScore}/100` : "-"
+          ]
         ],
         styles: {
           fontSize: 9,
@@ -343,10 +411,10 @@ export default function PublicDirectory() {
             type="button"
             className="badge border-cyan-800 bg-cyan-950/50 text-cyan-300 hover:border-cyan-500 hover:text-cyan-200 transition disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleGenerateReport}
-            disabled={!ordered.length}
+            disabled={!ordered.length || reportLoading}
           >
             <Download className="mr-2 h-3.5 w-3.5" />
-            Generate Report
+            {reportLoading ? "Generating..." : "Generate Report"}
           </button>
         </div>
 
