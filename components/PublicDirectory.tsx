@@ -77,6 +77,13 @@ function formatList(value: string[] | undefined) {
   return value.map((item) => `- ${item}`).join("\n");
 }
 
+function formatUniversityList(value: { name: string; reason: string }[] | undefined) {
+  if (!value || !value.length) return "-";
+  return value
+    .map((item) => `- ${item.name}: ${item.reason}`)
+    .join("\n");
+}
+
 const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "visaType", label: "Visa Type" },
   { key: "university", label: "Intended University" },
@@ -205,6 +212,10 @@ export default function PublicDirectory() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          filters: filterSummary,
+          targetCgpa: maxCgpa.trim(),
+          targetIelts: ieltsScore.trim(),
+          targetGre: greScore.trim(),
           profiles: ordered.map((profile) => ({
             id: profile.id,
             name: profile.name,
@@ -261,6 +272,7 @@ export default function PublicDirectory() {
           ["Strengths", formatList(aiSummary.strengths)],
           ["Gaps", formatList(aiSummary.gaps)],
           ["Recommendations", formatList(aiSummary.recommendations)],
+          ["Recommended Universities", formatUniversityList(aiSummary.recommendedUniversities)],
           [
             "Readiness Score",
             Number.isFinite(aiSummary.readinessScore)

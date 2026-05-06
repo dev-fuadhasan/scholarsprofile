@@ -182,26 +182,40 @@ export type ReportSummaryOutput = {
   gaps: string[];
   recommendations: string[];
   readinessScore: number;
+  recommendedUniversities: { name: string; reason: string }[];
 };
 
 const reportSystemPrompt = `You are an admissions advisor creating an aggregate application-ready report.
+Use ONLY the universities provided in the profiles list. Do NOT invent new universities.
 Return only JSON with this shape:
 {
   "summary": "",
   "strengths": [""],
   "gaps": [""],
   "recommendations": [""],
-  "readinessScore": 0
+  "readinessScore": 0,
+  "recommendedUniversities": [
+    { "name": "", "reason": "" }
+  ]
 }
 
 Rules:
-- summary: 3-5 concise sentences that reflect the group overall.
+- summary: 3-5 concise sentences that reflect the group overall and the target filters.
 - strengths, gaps, recommendations: 3-6 bullet-like short phrases each.
 - readinessScore: 0-100 integer (overall readiness).
-- Be factual; if data is missing, say so in gaps/recommendations.
+- recommendedUniversities: 4-8 items from the provided university list only, with short reasons tied to target CGPA/IELTS/GRE and program/subject.
+- If data is missing, say so in gaps/recommendations.
 - No markdown or extra text.`;
 
-export async function generateReportSummary(profiles: ReportProfileInput[]) {
+export async function generateReportSummary(
+  profiles: ReportProfileInput[],
+  context: {
+    filters: string;
+    targetCgpa?: string;
+    targetIelts?: string;
+    targetGre?: string;
+  }
+) {
   const apiKey = process.env.GROQ_API_KEY || "";
   if (!apiKey) {
     throw new Error("Missing GROQ_API_KEY");
@@ -222,7 +236,10 @@ export async function generateReportSummary(profiles: ReportProfileInput[]) {
         { role: "system", content: reportSystemPrompt },
         {
           role: "user",
-          content: JSON.stringify({ profiles })
+          content: JSON.stringify({
+            context,
+            profiles
+          })
         }
       ]
     })
