@@ -31,7 +31,6 @@ type AiReport = {
   gaps: string[];
   recommendations: string[];
   readinessScore: number;
-  recommendedUniversities: { name: string; reason: string }[];
 };
 
 function normalizeProgram(value: string | null | undefined) {
@@ -78,12 +77,6 @@ function formatList(value: string[] | undefined) {
   return value.map((item) => `- ${item}`).join("\n");
 }
 
-function formatUniversityList(value: { name: string; reason: string }[] | undefined) {
-  if (!value || !value.length) return "-";
-  return value
-    .map((item) => `- ${item.name}: ${item.reason}`)
-    .join("\n");
-}
 
 const filterFields: { key: keyof Profile; label: string }[] = [
   { key: "visaType", label: "Visa Type" },
@@ -273,7 +266,6 @@ export default function PublicDirectory() {
           ["Strengths", formatList(aiSummary.strengths)],
           ["Gaps", formatList(aiSummary.gaps)],
           ["Recommendations", formatList(aiSummary.recommendations)],
-          ["Recommended Universities", formatUniversityList(aiSummary.recommendedUniversities)],
           [
             "Readiness Score",
             Number.isFinite(aiSummary.readinessScore)

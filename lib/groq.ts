@@ -182,28 +182,22 @@ export type ReportSummaryOutput = {
   gaps: string[];
   recommendations: string[];
   readinessScore: number;
-  recommendedUniversities: { name: string; reason: string }[];
 };
 
 const reportSystemPrompt = `You are an admissions advisor creating an aggregate application-ready report.
-Use ONLY the universities provided in the profiles list. Do NOT invent new universities.
 Return only JSON with this shape:
 {
   "summary": "",
   "strengths": [""],
   "gaps": [""],
   "recommendations": [""],
-  "readinessScore": 0,
-  "recommendedUniversities": [
-    { "name": "", "reason": "" }
-  ]
+  "readinessScore": 0
 }
 
 Rules:
 - summary: 3-5 concise sentences that reflect the group overall and the target filters.
 - strengths, gaps, recommendations: 3-6 bullet-like short phrases each.
 - readinessScore: 0-100 integer (overall readiness).
-- recommendedUniversities: 4-8 items from the provided university list only, with short reasons tied to target CGPA/IELTS/GRE and program/subject.
 - If data is missing, say so in gaps/recommendations.
 - No markdown or extra text.`;
 
