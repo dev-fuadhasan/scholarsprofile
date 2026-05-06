@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { GraduationCap, Search, Filter, AlertCircle, University, Calendar, BookOpen, Banknote, FileText, Briefcase, Award } from "lucide-react";
 
 type Profile = {
   id: string;
@@ -155,48 +156,53 @@ export default function PublicDirectory() {
   }, [filtered]);
 
   return (
-    <section className="card p-6">
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold">Filters</h2>
-            <p className="text-xs text-slate-400">Narrow down by any field.</p>
-          </div>
-          <label className="text-sm text-slate-300">
+    <div className="grid gap-8 lg:grid-cols-[280px_1fr] items-start">
+      {/* Sidebar Filters */}
+      <aside className="sticky top-6 flex flex-col gap-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6 backdrop-blur-xl">
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-4">
+          <Filter className="h-5 w-5 text-cyan-400" />
+          <h2 className="text-lg font-semibold tracking-tight text-white">Filters</h2>
+        </div>
+        
+        <div className="flex flex-col gap-4">
+          <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
             Max CGPA ({"<="})
             <input
-              className="input mt-2"
+              className="input bg-slate-950/50 block w-full py-2.5"
               inputMode="decimal"
               placeholder="e.g. 3.5"
               value={maxCgpa}
               onChange={(event) => setMaxCgpa(event.target.value)}
             />
           </label>
-          <label className="text-sm text-slate-300">
+          <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
             IELTS Score
             <input
-              className="input mt-2"
+              className="input bg-slate-950/50 block w-full py-2.5"
               inputMode="decimal"
               placeholder="e.g. 7.5"
               value={ieltsScore}
               onChange={(event) => setIeltsScore(event.target.value)}
             />
           </label>
-          <label className="text-sm text-slate-300">
+          <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
             GRE Score
             <input
-              className="input mt-2"
+              className="input bg-slate-950/50 block w-full py-2.5"
               inputMode="decimal"
               placeholder="e.g. 320"
               value={greScore}
               onChange={(event) => setGreScore(event.target.value)}
             />
           </label>
+          
+          <div className="my-2 h-px w-full bg-slate-800" />
+
           {filterFields.map((field) => (
-            <label key={field.key} className="text-sm text-slate-300">
+            <label key={field.key} className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
               {field.label}
               <select
-                className="input mt-2"
+                className="input bg-slate-950/50 block w-full py-2.5 appearance-none"
                 value={filters[field.key]}
                 onChange={(event) => setFilters((prev) => ({ ...prev, [field.key]: event.target.value }))}
               >
@@ -209,57 +215,151 @@ export default function PublicDirectory() {
               </select>
             </label>
           ))}
-          <button
-            className="btn-ghost"
-            onClick={() => {
-              setFilters(createDefaultFilters());
-              setMaxCgpa("");
-              setIeltsScore("");
-              setGreScore("");
-            }}
-          >
-            Clear Filters
-          </button>
-        </aside>
+        </div>
+        
+        <button
+          className="btn-ghost mt-4 w-full py-2.5"
+          onClick={() => {
+            setFilters(createDefaultFilters());
+            setMaxCgpa("");
+            setIeltsScore("");
+            setGreScore("");
+          }}
+        >
+          Clear Filters
+        </button>
+      </aside>
 
-        <div>
+      {/* Main Content */}
+      <div className="flex flex-col gap-6">
+        <div className="relative">
+          <label className="sr-only">Search</label>
+          <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-slate-400" />
+          </div>
           <input
-            className="input"
+            className="input !rounded-2xl border-slate-700 bg-slate-900/60 py-4 pl-12 pr-4 text-base backdrop-blur-xl transition hover:border-slate-600 focus:border-cyan-500 shadow-sm"
             placeholder="Search by name, university, program, subject..."
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
+        </div>
 
-          <div className="mt-6 grid gap-4">
-            {ordered.map((profile) => (
-              <article key={profile.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <h3 className="text-xl font-semibold text-white">{profile.name}</h3>
-                  <span className="badge">{profile.status || "Status"}</span>
+        <div className="flex items-center justify-between text-sm text-slate-400 px-1">
+          <span>Showing <strong className="text-white">{ordered.length}</strong> profiles</span>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          {ordered.map((profile) => (
+            <article 
+              key={profile.id} 
+              className="group flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/40 p-6 transition-all hover:-translate-y-1 hover:border-slate-700 hover:bg-slate-800/40 hover:shadow-xl hover:shadow-cyan-900/10"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <h3 className="truncate text-xl font-bold tracking-tight text-white">{profile.name}</h3>
+                  <div className="mt-1.5 flex items-center gap-1.5 text-sm font-medium text-cyan-400">
+                    <GraduationCap className="h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {normalizeProgram(profile.program) || profile.program || "Program"} 
+                      {profile.subject || deriveSubject(profile.program) ? ` in ${profile.subject || deriveSubject(profile.program)}` : ""}
+                    </span>
+                  </div>
                 </div>
-                <div className="mt-3 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-                  <p>Intended University: {profile.university || "-"}</p>
-                  <p>Program: {normalizeProgram(profile.program) || profile.program || "-"}</p>
-                  <p>Subject: {profile.subject || deriveSubject(profile.program) || "-"}</p>
-                  <p>Intake: {profile.intake || "-"}</p>
-                  <p>Funding: {profile.fundingStatus || "-"}</p>
-                  <p>Visa Type: {profile.visaType || "-"}</p>
-                  <p>Interview Date: {profile.interviewDate || "-"}</p>
-                  <p>Studied University: {profile.universityName || "-"}</p>
-                  <p>CGPA: {profile.cgpa || "-"}</p>
-                  <p>GRE: {profile.gre || "-"}</p>
-                  <p>IELTS/Other: {profile.ieltsOther || "-"}</p>
-                  <p>Research: {profile.researchPublication || "-"}</p>
-                  <p>Work Experience: {profile.workExperience || "-"}</p>
+                <span className="badge shrink-0 border-cyan-800 bg-cyan-950/50 text-cyan-300">
+                  {profile.status || "Status"}
+                </span>
+              </div>
+
+              <div className="my-5 h-px w-full bg-gradient-to-r from-slate-800 to-transparent" />
+
+              <div className="grid flex-1 grid-cols-2 gap-x-4 gap-y-4 text-sm">
+                <div className="flex flex-col gap-1 text-slate-300">
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <University className="h-3.5 w-3.5" /> Intended
+                  </span>
+                  <span className="font-medium line-clamp-1" title={profile.university}>{profile.university || "-"}</span>
                 </div>
-              </article>
-            ))}
-            {!ordered.length && (
-              <p className="text-center text-slate-400">No profiles found. Try adjusting filters.</p>
-            )}
-          </div>
+                <div className="flex flex-col gap-1 text-slate-300">
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <Banknote className="h-3.5 w-3.5" /> Funding
+                  </span>
+                  <span className="font-medium text-emerald-400">{profile.fundingStatus || "-"}</span>
+                </div>
+                
+                <div className="flex flex-col gap-1 text-slate-300">
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <BookOpen className="h-3.5 w-3.5" /> Studied
+                  </span>
+                  <span className="font-medium line-clamp-1" title={profile.universityName}>{profile.universityName || "-"}</span>
+                </div>
+                <div className="flex flex-col gap-1 text-slate-300">
+                  <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    <Calendar className="h-3.5 w-3.5" /> Intake / Visa
+                  </span>
+                  <span className="font-medium">{profile.intake || "-"} / {profile.visaType || "-"}</span>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2 pt-4 border-t border-slate-800/60">
+                {profile.cgpa && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
+                    <span className="text-slate-500">CGPA</span> {profile.cgpa}
+                  </span>
+                )}
+                {profile.gre && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
+                    <span className="text-slate-500">GRE</span> {profile.gre}
+                  </span>
+                )}
+                {profile.ieltsOther && (
+                  <span className="inline-flex items-center gap-1 rounded-lg bg-slate-950 px-2.5 py-1 text-xs font-medium text-slate-300 border border-slate-800">
+                    <span className="text-slate-500">IELTS</span> {profile.ieltsOther}
+                  </span>
+                )}
+              </div>
+              
+              {(profile.researchPublication || profile.workExperience) && (
+                <div className="mt-3 grid gap-1.5 text-xs text-slate-400">
+                  {profile.researchPublication && (
+                    <div className="flex items-start gap-2">
+                       <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                       <span className="line-clamp-2 leading-relaxed" title={profile.researchPublication}>{profile.researchPublication}</span>
+                    </div>
+                  )}
+                  {profile.workExperience && (
+                    <div className="flex items-start gap-2">
+                       <Briefcase className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                       <span className="line-clamp-2 leading-relaxed" title={profile.workExperience}>{profile.workExperience}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </article>
+          ))}
+          {!ordered.length && (
+            <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/20 py-20 px-6 text-center">
+              <AlertCircle className="mb-4 h-10 w-10 text-slate-500" />
+              <h3 className="text-lg font-semibold text-white">No profiles found</h3>
+              <p className="mt-1 max-w-sm text-sm text-slate-400">
+                We couldn't find any student profiles matching your current filters. Try adjusting or clearing them.
+              </p>
+              <button
+                className="btn-ghost mt-6"
+                onClick={() => {
+                  setFilters(createDefaultFilters());
+                  setMaxCgpa("");
+                  setIeltsScore("");
+                  setGreScore("");
+                  setQuery("");
+                }}
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
