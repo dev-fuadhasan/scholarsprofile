@@ -183,8 +183,9 @@ export default function PublicDirectory() {
   const handleGenerateReport = () => {
     if (!ordered.length) return;
 
-    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
     doc.setFontSize(18);
     doc.text("Scholars Directory Report", 40, 40);
@@ -192,60 +193,55 @@ export default function PublicDirectory() {
     doc.text(`Generated: ${new Date().toLocaleString()}`, 40, 60);
     doc.text(`Filters: ${filterSummary}`, 40, 75, { maxWidth: pageWidth - 80 });
 
-    autoTable(doc, {
-      startY: 95,
-      head: [[
-        "Name",
-        "Program",
-        "Subject",
-        "Intended University",
-        "Studied University",
-        "Intake",
-        "Visa",
-        "CGPA",
-        "GRE",
-        "IELTS/Other",
-        "Research",
-        "Work Experience"
-      ]],
-      body: ordered.map((profile) => [
-        formatReportValue(profile.name),
-        formatReportValue(normalizeProgram(profile.program) || profile.program),
-        formatReportValue(profile.subject || deriveSubject(profile.program)),
-        formatReportValue(profile.university),
-        formatReportValue(profile.universityName),
-        formatReportValue(profile.intake),
-        formatReportValue(profile.visaType),
-        formatReportValue(profile.cgpa),
-        formatReportValue(profile.gre),
-        formatReportValue(profile.ieltsOther),
-        formatReportValue(profile.researchPublication),
-        formatReportValue(profile.workExperience)
-      ]),
-      styles: {
-        fontSize: 7.5,
-        cellPadding: 4,
-        overflow: "linebreak"
-      },
-      headStyles: {
-        fillColor: [8, 65, 79],
-        textColor: [245, 248, 255],
-        fontStyle: "bold"
-      },
-      columnStyles: {
-        0: { cellWidth: 90 },
-        1: { cellWidth: 55 },
-        2: { cellWidth: 70 },
-        3: { cellWidth: 115 },
-        4: { cellWidth: 115 },
-        5: { cellWidth: 55 },
-        6: { cellWidth: 50 },
-        7: { cellWidth: 40 },
-        8: { cellWidth: 40 },
-        9: { cellWidth: 55 },
-        10: { cellWidth: 170 },
-        11: { cellWidth: 170 }
+    let cursorY = 95;
+
+    ordered.forEach((profile, index) => {
+      if (cursorY > pageHeight - 180) {
+        doc.addPage();
+        cursorY = 40;
       }
+
+      doc.setFontSize(12);
+      doc.text(`${index + 1}. ${formatReportValue(profile.name)}`, 40, cursorY);
+      cursorY += 10;
+
+      autoTable(doc, {
+        startY: cursorY + 6,
+        head: [["Field", "Value"]],
+        body: [
+          ["Program", formatReportValue(normalizeProgram(profile.program) || profile.program)],
+          ["Subject", formatReportValue(profile.subject || deriveSubject(profile.program))],
+          ["Intended University", formatReportValue(profile.university)],
+          ["Studied University", formatReportValue(profile.universityName)],
+          ["Funding", formatReportValue(profile.fundingStatus)],
+          ["Intake", formatReportValue(profile.intake)],
+          ["Visa", formatReportValue(profile.visaType)],
+          ["Interview Date", formatReportValue(profile.interviewDate)],
+          ["CGPA", formatReportValue(profile.cgpa)],
+          ["GRE", formatReportValue(profile.gre)],
+          ["IELTS/Other", formatReportValue(profile.ieltsOther)],
+          ["Research", formatReportValue(profile.researchPublication)],
+          ["Work Experience", formatReportValue(profile.workExperience)]
+        ],
+        styles: {
+          fontSize: 9,
+          cellPadding: 6,
+          overflow: "linebreak",
+          valign: "top"
+        },
+        headStyles: {
+          fillColor: [8, 65, 79],
+          textColor: [245, 248, 255],
+          fontStyle: "bold"
+        },
+        columnStyles: {
+          0: { cellWidth: 140, fontStyle: "bold" },
+          1: { cellWidth: pageWidth - 200 }
+        }
+      });
+
+      const tableInfo = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable;
+      cursorY = (tableInfo?.finalY ?? cursorY) + 20;
     });
 
     doc.save(`scholars-report-${new Date().toISOString().slice(0, 10)}.pdf`);
