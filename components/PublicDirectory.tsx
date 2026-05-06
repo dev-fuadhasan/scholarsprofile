@@ -25,13 +25,6 @@ type Profile = {
   workExperience: string;
 };
 
-type AiReport = {
-  summary: string;
-  strengths: string[];
-  gaps: string[];
-  recommendations: string[];
-  readinessScore: number;
-};
 
 function normalizeProgram(value: string | null | undefined) {
   if (!value) return "";
@@ -72,10 +65,6 @@ function formatReportValue(value: string | null | undefined) {
   return value.trim() || "-";
 }
 
-function formatList(value: string[] | undefined) {
-  if (!value || !value.length) return "-";
-  return value.map((item) => `- ${item}`).join("\n");
-}
 
 
 const filterFields: { key: keyof Profile; label: string }[] = [
@@ -100,7 +89,6 @@ export default function PublicDirectory() {
   const [maxCgpa, setMaxCgpa] = useState("");
   const [ieltsScore, setIeltsScore] = useState("");
   const [greScore, setGreScore] = useState("");
-  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/public/profiles", { cache: "no-store" })
@@ -195,55 +183,8 @@ export default function PublicDirectory() {
     return summary.length ? summary.join(" | ") : "None";
   }, [filters, greScore, ieltsScore, maxCgpa, query]);
 
-  const handleGenerateReport = async () => {
+  const handleGenerateReport = () => {
     if (!ordered.length) return;
-
-    setReportLoading(true);
-    let aiSummary: AiReport | null = null;
-
-    try {
-      const response = await fetch("/api/public/report", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          filters: filterSummary,
-          targetCgpa: maxCgpa.trim(),
-          targetIelts: ieltsScore.trim(),
-          targetGre: greScore.trim(),
-          profiles: ordered.map((profile) => ({
-            id: profile.id,
-            name: profile.name,
-            program: profile.program,
-            subject: profile.subject,
-            university: profile.university,
-            universityName: profile.universityName,
-            fundingStatus: profile.fundingStatus,
-            intake: profile.intake,
-            visaType: profile.visaType,
-            interviewDate: profile.interviewDate,
-            cgpa: profile.cgpa,
-            gre: profile.gre,
-            ieltsOther: profile.ieltsOther,
-            researchPublication: profile.researchPublication,
-            workExperience: profile.workExperience
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        const message = errorBody?.error || "Failed to generate AI report.";
-        throw new Error(message);
-      }
-
-      const data = await response.json();
-      aiSummary = (data?.summary || null) as AiReport | null;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to generate AI report.";
-      alert(message);
-    } finally {
-      setReportLoading(false);
-    }
 
     const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
@@ -257,42 +198,6 @@ export default function PublicDirectory() {
 
     let cursorY = 95;
 
-    if (aiSummary) {
-      autoTable(doc, {
-        startY: cursorY,
-        head: [["AI Report (Aggregate)", "Details"]],
-        body: [
-          ["Summary", formatReportValue(aiSummary.summary)],
-          ["Strengths", formatList(aiSummary.strengths)],
-          ["Gaps", formatList(aiSummary.gaps)],
-          ["Recommendations", formatList(aiSummary.recommendations)],
-          [
-            "Readiness Score",
-            Number.isFinite(aiSummary.readinessScore)
-              ? `${aiSummary.readinessScore}/100`
-              : "-"
-          ]
-        ],
-        styles: {
-          fontSize: 9,
-          cellPadding: 6,
-          overflow: "linebreak",
-          valign: "top"
-        },
-        headStyles: {
-          fillColor: [8, 65, 79],
-          textColor: [245, 248, 255],
-          fontStyle: "bold"
-        },
-        columnStyles: {
-          0: { cellWidth: 160, fontStyle: "bold" },
-          1: { cellWidth: pageWidth - 220 }
-        }
-      });
-
-      const tableInfo = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable;
-      cursorY = (tableInfo?.finalY ?? cursorY) + 20;
-    }
 
     ordered.forEach((profile, index) => {
       if (cursorY > pageHeight - 180) {
@@ -442,10 +347,10 @@ export default function PublicDirectory() {
             type="button"
             className="badge border-cyan-800 bg-cyan-950/50 text-cyan-300 hover:border-cyan-500 hover:text-cyan-200 transition disabled:cursor-not-allowed disabled:opacity-60"
             onClick={handleGenerateReport}
-            disabled={!ordered.length || reportLoading}
+            disabled={!ordered.length}
           >
             <Download className="mr-2 h-3.5 w-3.5" />
-            {reportLoading ? "Generating..." : "Generate Report"}
+            Generate Report
           </button>
         </div>
 
