@@ -23,7 +23,8 @@ type Profile = {
   workExperience: string;
 };
 
-function normalizeProgram(value: string) {
+function normalizeProgram(value: string | null | undefined) {
+  if (!value) return "";
   const normalized = value.toLowerCase();
   if (normalized.includes("phd")) return "PhD";
   if (
@@ -37,18 +38,21 @@ function normalizeProgram(value: string) {
   return value.trim();
 }
 
-function normalizeFunding(value: string) {
+function normalizeFunding(value: string | null | undefined) {
+  if (!value) return "";
   return value.toLowerCase().includes("full") ? "Full" : "";
 }
 
-function extractNumber(value: string) {
+function extractNumber(value: string | null | undefined) {
+  if (!value) return null;
   const match = value.match(/(\d+(?:\.\d+)?)/);
   if (!match) return null;
   const parsed = Number.parseFloat(match[1]);
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-function deriveSubject(program: string) {
+function deriveSubject(program: string | null | undefined) {
+  if (!program) return "";
   const match = program.match(/\b(?:phd|msc|m\.sc|ms|master\'?s?)\b\s+in\s+([^,.;\n]+)/i);
   return match ? match[1].trim() : "";
 }
@@ -249,7 +253,7 @@ export default function PublicDirectory() {
           <span>Showing <strong className="text-white">{ordered.length}</strong> profiles</span>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3">
           {ordered.map((profile) => (
             <article 
               key={profile.id} 
