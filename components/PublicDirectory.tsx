@@ -198,7 +198,7 @@ export default function PublicDirectory() {
     if (!ordered.length) return;
 
     setReportLoading(true);
-    let aiReportMap = new Map<string, AiReport>();
+    let aiSummary: AiReport | null = null;
 
     try {
       const response = await fetch("/api/public/report", {
@@ -232,8 +232,7 @@ export default function PublicDirectory() {
       }
 
       const data = await response.json();
-      const reportProfiles = (data?.profiles || []) as (AiReport & { id: string })[];
-      aiReportMap = new Map(reportProfiles.map((item) => [item.id, item]));
+      aiSummary = (data?.summary || null) as AiReport | null;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to generate AI report.";
       alert(message);
@@ -253,6 +252,43 @@ export default function PublicDirectory() {
 
     let cursorY = 95;
 
+    if (aiSummary) {
+      autoTable(doc, {
+        startY: cursorY,
+        head: [["AI Report (Aggregate)", "Details"]],
+        body: [
+          ["Summary", formatReportValue(aiSummary.summary)],
+          ["Strengths", formatList(aiSummary.strengths)],
+          ["Gaps", formatList(aiSummary.gaps)],
+          ["Recommendations", formatList(aiSummary.recommendations)],
+          [
+            "Readiness Score",
+            Number.isFinite(aiSummary.readinessScore)
+              ? `${aiSummary.readinessScore}/100`
+              : "-"
+          ]
+        ],
+        styles: {
+          fontSize: 9,
+          cellPadding: 6,
+          overflow: "linebreak",
+          valign: "top"
+        },
+        headStyles: {
+          fillColor: [8, 65, 79],
+          textColor: [245, 248, 255],
+          fontStyle: "bold"
+        },
+        columnStyles: {
+          0: { cellWidth: 160, fontStyle: "bold" },
+          1: { cellWidth: pageWidth - 220 }
+        }
+      });
+
+      const tableInfo = (doc as jsPDF & { lastAutoTable?: { finalY?: number } }).lastAutoTable;
+      cursorY = (tableInfo?.finalY ?? cursorY) + 20;
+    }
+
     ordered.forEach((profile, index) => {
       if (cursorY > pageHeight - 180) {
         doc.addPage();
@@ -262,8 +298,6 @@ export default function PublicDirectory() {
       doc.setFontSize(12);
       doc.text(`${index + 1}. ${formatReportValue(profile.name)}`, 40, cursorY);
       cursorY += 10;
-
-      const aiReport = aiReportMap.get(profile.id);
 
       autoTable(doc, {
         startY: cursorY + 6,
@@ -281,15 +315,7 @@ export default function PublicDirectory() {
           ["GRE", formatReportValue(profile.gre)],
           ["IELTS/Other", formatReportValue(profile.ieltsOther)],
           ["Research", formatReportValue(profile.researchPublication)],
-          ["Work Experience", formatReportValue(profile.workExperience)],
-          ["AI Summary", formatReportValue(aiReport?.summary)],
-          ["Strengths", formatList(aiReport?.strengths)],
-          ["Gaps", formatList(aiReport?.gaps)],
-          ["Recommendations", formatList(aiReport?.recommendations)],
-          [
-            "Readiness Score",
-            Number.isFinite(aiReport?.readinessScore) ? `${aiReport?.readinessScore}/100` : "-"
-          ]
+          ["Work Experience", formatReportValue(profile.workExperience)]
         ],
         styles: {
           fontSize: 9,

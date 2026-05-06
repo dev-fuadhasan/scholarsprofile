@@ -176,8 +176,7 @@ export type ReportProfileInput = {
   workExperience: string;
 };
 
-export type ReportProfileOutput = {
-  id: string;
+export type ReportSummaryOutput = {
   summary: string;
   strengths: string[];
   gaps: string[];
@@ -185,29 +184,24 @@ export type ReportProfileOutput = {
   readinessScore: number;
 };
 
-const reportSystemPrompt = `You are an admissions advisor creating an application-ready report.
+const reportSystemPrompt = `You are an admissions advisor creating an aggregate application-ready report.
 Return only JSON with this shape:
 {
-  "profiles": [
-    {
-      "id": "",
-      "summary": "",
-      "strengths": [""],
-      "gaps": [""],
-      "recommendations": [""],
-      "readinessScore": 0
-    }
-  ]
+  "summary": "",
+  "strengths": [""],
+  "gaps": [""],
+  "recommendations": [""],
+  "readinessScore": 0
 }
 
 Rules:
-- summary: 2-3 concise sentences.
-- strengths, gaps, recommendations: 2-4 bullet-like short phrases each.
-- readinessScore: 0-100 integer.
+- summary: 3-5 concise sentences that reflect the group overall.
+- strengths, gaps, recommendations: 3-6 bullet-like short phrases each.
+- readinessScore: 0-100 integer (overall readiness).
 - Be factual; if data is missing, say so in gaps/recommendations.
 - No markdown or extra text.`;
 
-export async function generateReportProfiles(profiles: ReportProfileInput[]) {
+export async function generateReportSummary(profiles: ReportProfileInput[]) {
   const apiKey = process.env.GROQ_API_KEY || "";
   if (!apiKey) {
     throw new Error("Missing GROQ_API_KEY");
@@ -243,14 +237,14 @@ export async function generateReportProfiles(profiles: ReportProfileInput[]) {
   const content = data?.choices?.[0]?.message?.content || "{}";
 
   try {
-    const parsed = JSON.parse(content) as { profiles: ReportProfileOutput[] };
-    return parsed.profiles || [];
+    const parsed = JSON.parse(content) as ReportSummaryOutput;
+    return parsed;
   } catch {
     const match = content.match(/\{[\s\S]*\}/);
     if (!match) {
       throw new Error("Groq returned non-JSON content");
     }
-    const parsed = JSON.parse(match[0]) as { profiles: ReportProfileOutput[] };
-    return parsed.profiles || [];
+    const parsed = JSON.parse(match[0]) as ReportSummaryOutput;
+    return parsed;
   }
 }

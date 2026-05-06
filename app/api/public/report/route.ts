@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { generateReportProfiles, ReportProfileInput } from "../../../../lib/groq";
+import { generateReportSummary, ReportProfileInput } from "../../../../lib/groq";
 
 const MAX_REPORT_PROFILES = 40;
 
@@ -19,8 +19,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const reportProfiles = await generateReportProfiles(profiles);
-    return NextResponse.json({ profiles: reportProfiles });
+    const summary = await generateReportSummary(profiles);
+    return NextResponse.json({ summary });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Report generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
